@@ -1,3 +1,5 @@
+var CURRENT_WEEK = 'week 9';
+
 /**
  * Adds a custom menu to the active spreadsheet, containing a single menu item
  * for invoking the readRows() function specified above.
@@ -19,14 +21,10 @@ function onOpen() {
 };
 
 function calculateDivisionWinPercentage() {
-  Logger.log("yo!");
 
-  var CURRENT_WEEK = 'week 9';
   //var sheet = getSheets();
   var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
   var results = [];
-  Logger.log("POOP!!!");
-  Logger.log("Sheets length: " + sheets.length);
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].getName().toLowerCase() != "pick stats" && sheets[i].getName().toLowerCase() != CURRENT_WEEK) {
       // Record for each pick, the week, what each selected, what total selected, and if it was a divison
@@ -61,7 +59,6 @@ function calculateDivisionWinPercentage() {
       total[divisionalKey(parts[p])] += week.data[parts[p]].divisionalCorrect;
     }
   }
-  Logger.log(total);
 
   Logger.log("=================================================================");
   Logger.log("Results for ALL weeks (excluding current:" + CURRENT_WEEK + ")");
@@ -104,7 +101,5 @@ function divisionWinPercentage(sheet) {
       results.data[participant].divisionalCorrect += (correct && isDivisional) ? 1 : 0;
     }
   }
-  Logger.log('--------------');
-  Logger.log(results);
   return results;
 };
