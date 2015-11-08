@@ -178,7 +178,7 @@ function teamBias() {
       rows.push(row);
       for (var team in TEAMS) {
         var correct = data.correctPicksPerParticipant[person][team];
-        row.push(formatPercent(correct / data.gamesPerTeam[team]));
+        row.push(correct);
       }
     }
     var statsSheet = getStatsSheet();
@@ -207,8 +207,13 @@ function teamBias() {
       results.teams.push(teams[0], teams[1]);
       for (var p in participants) {
         var pick = extractor.pick(participants[p], game);
+        var opponent = pick == teams[0] ? teams[1] : teams[0];
         if (pick == result) {
+          // Count a successful selection as correct for both the winning team
+          // AND their opponent. Count the opponent since the participant
+          // successfully selected against them.
           results.correctPicks[ participants[p] ].push(pick)
+          results.correctPicks[ participants[p] ].push(opponent)
         }
       }
     }
