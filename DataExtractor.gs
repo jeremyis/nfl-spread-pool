@@ -81,23 +81,34 @@ DataExtractor.prototype.initializeGameRows = function (header) {
   };
   this.gameRows = gameRows;
 };
+
 DataExtractor.prototype.pickedCorrectForGame = function (person, gameNum) {
   if (!(0 <= gameNum && gameNum < this.gameRows.length)) {
     throw new Error("Invalid gameNum: " + gameNum + ". # of Game Rows: " + this.gameRows.length);
   }
-  var gameRow = this.gameRows[ gameNum ];
-  var personCol = this.columnIndex[ person ];
-  var resultCol = this.columnIndex[ DataExtractor.RESULT ];
-  var pick = this.range.getValues()[gameRow][personCol];
-  var result =  this.range.getValues()[gameRow][resultCol];
 
-  return pick == result;
+  return this.pick(person, gameNum) == this.result(gameNum);
 };
 DataExtractor.prototype.gameIsDivisional = function (gameNum) {
-  var awayCol = this.columnIndex[ DataExtractor.AWAY ];
-  var homeCol = this.columnIndex[ DataExtractor.HOME ];
-  var gameRow = this.gameRows[ gameNum ];
-  var values = this.range.getValues();
+  var teams = this.teams(gameNum);
 
-  return teamsAreInSameDivision(values[gameRow][awayCol], values[gameRow][homeCol]);
+  return teamsAreInSameDivision(teams[0], teams[1]);
+};
+DataExtractor.prototype.teams = function (gameNum) {
+  var gameRow = this.gameRows[ gameNum ];
+  var homeCol = this.columnIndex[ DataExtractor.HOME ];
+  var awayCol = this.columnIndex[ DataExtractor.AWAY ];
+  var values = this.range.getValues();
+  return [ values[gameRow][awayCol].trim(), values[gameRow][homeCol].trim() ];
+}
+DataExtractor.prototype.result = function (gameNum) {
+  var resultCol = this.columnIndex[ DataExtractor.RESULT ];
+  var gameRow = this.gameRows[ gameNum ];
+  return this.range.getValues()[gameRow][resultCol].trim();
+};
+DataExtractor.prototype.pick = function (person, gameNum) {
+  var gameRow = this.gameRows[ gameNum ];
+  var personCol = this.columnIndex[ person ];
+  var pick = this.range.getValues()[gameRow][personCol].trim();
+  return pick;
 };

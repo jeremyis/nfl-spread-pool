@@ -36,3 +36,26 @@ function formatPercent(num) {
   var x = String(num * 100);
   return x.substr(0, 5) + '%';
 }
+
+function getStatsSheet() {
+  var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+  var results = [];
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].getName().toLowerCase().trim() == "pick stats") {
+      return sheets[i];
+    }
+  }
+  throw new Error("Cannot find stats sheet.");
+}
+
+function getCompletedWeekSheets() {
+  var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+  var results = [];
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].getName().toLowerCase() != "pick stats" && sheets[i].getName().toLowerCase() != CURRENT_WEEK) {
+      // Record for each pick, the week, what each selected, what total selected, and if it was a divison
+      results.push(sheets[i]);
+    }
+  }
+  return results;
+};

@@ -23,13 +23,11 @@ function onOpen() {
 function calculateDivisionWinPercentage() {
 
   //var sheet = getSheets();
-  var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+  var sheets = getCompletedWeekSheets();
   var results = [];
   for (var i = 0; i < sheets.length; i++) {
-    if (sheets[i].getName().toLowerCase() != "pick stats" && sheets[i].getName().toLowerCase() != CURRENT_WEEK) {
-      // Record for each pick, the week, what each selected, what total selected, and if it was a divison
-      results.push(divisionWinPercentage(sheets[i]));
-    }
+    // Record for each pick, the week, what each selected, what total selected, and if it was a divison
+    results.push(divisionWinPercentage(sheets[i]));
   }
   // see for each week x person, division and total, and then overall and division
   // results = [{
@@ -103,3 +101,120 @@ function divisionWinPercentage(sheet) {
   }
   return results;
 };
+
+/**
+ * Append table to stats sheet. Teams as rows, participants as columns. Value is
+ * percentage of time we guess correctly.
+ */
+function teamBias() {
+  var participants = DataExtractor.PARTICIPANTS;
+  function main() {
+    var sheets = getCompletedWeekSheets();
+    var results = [];
+    for (var i = 0; i < sheets.length; i++) {
+      // Record for each pick, the week, what each selected, what total selected, and if it was a divison
+      results.push(teamBiasForWeek(sheets[i]));
+    }
+    var data = compileResults(results);
+    printAsTable(data);
+  };
+  function compileResults(results) {
+    /**
+      * Results looks like:
+      * results = [{
+      *   teams= [  Miami, New England, ...],
+      *   name=Week 8,
+      *   correctPicks= {
+      *     pick = [ New England, ... ],
+      *     matt = [ New England, ... ],
+      *     john = [ New England, ... ]
+      *   }
+      * }]
+      */
+    var data = {
+      gamesPerTeam: {},
+      correctPicksPerParticipant: {}
+    }
+    for (var team in TEAMS) { data.gamesPerTeam[ team ] = 0; }
+    for (var p in participants) {
+      data.correctPicksPerParticipant[ participants[p] ] = {};
+      for (var team in TEAMS) {
+        data.correctPicksPerParticipant[ participants[p] ][ team ] = 0;
+      }
+    }
+
+    // Iterate through each sheet results.
+    for (var r in results) {
+      var result = results[r];
+
+      // Count total games played by teams.
+      for (var t in result.teams) {
+        data.gamesPerTeam[ result.teams[t] ] += 1;
+      }
+
+      // Aggregate correct picks by participant x team.
+      for (var part in result.correctPicks) {
+        for (var pickI in result.correctPicks[part]) {
+          var pick = result.correctPicks[part][pickI];
+          data.correctPicksPerParticipant[part][pick] += 1;
+        }
+      }
+    }
+    return data;
+  };
+  function printAsTable(data) {
+    var teamRow = [ '' ];
+    for (var team in TEAMS) { teamRow.push(team); }
+    var totalGamesRow = [ 'games played' ];
+    for (var team in TEAMS) {
+      totalGamesRow.push(data.gamesPerTeam[ team ]);
+    }
+    var headerRow = ['Team bias summary', 'Run on:', new Date()];
+    var rows = [ [''], headerRow,  teamRow, totalGamesRow ];
+
+    for (var p in participants) {
+      var person = participants[p];
+      var row = [ person ];
+      rows.push(row);
+      for (var team in TEAMS) {
+        var correct = data.correctPicksPerParticipant[person][team];
+        row.push(formatPercent(correct / data.gamesPerTeam[team]));
+      }
+    }
+    var statsSheet = getStatsSheet();
+    for (var r in rows) {
+      var row = rows[r];
+      Logger.log(row.length);
+      Logger.log(row);
+      statsSheet.appendRow(row);
+    }
+  }
+
+  function teamBiasForWeek(sheet) {
+    var results = {
+      name: sheet.getName(),
+      correctPicks: {},
+      teams: []
+    };
+    for (var p in participants) {
+      results.correctPicks[ participants[p] ] = [];
+    }
+    var extractor = new DataExtractor(sheet.getDataRange());
+    extractor.extract();
+    for (var game = 0; game < extractor.numGames; game++) {
+      var result = extractor.result(game);
+      var teams = extractor.teams(game);
+      results.teams.push(teams[0], teams[1]);
+      for (var p in participants) {
+        var pick = extractor.pick(participants[p], game);
+        if (pick == result) {
+          results.correctPicks[ participants[p] ].push(pick)
+        }
+      }
+    }
+    return results;
+  }
+
+    return main();
+};
+
