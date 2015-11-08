@@ -104,7 +104,7 @@ function divisionWinPercentage(sheet) {
 
 /**
  * Append table to stats sheet. Teams as rows, participants as columns. Value is
- * percentage of time we guess correctly.
+ * number of games each participant selected correctly.
  */
 function teamBias() {
   var participants = DataExtractor.PARTICIPANTS;
@@ -215,6 +215,70 @@ function teamBias() {
           results.correctPicks[ participants[p] ].push(pick)
           results.correctPicks[ participants[p] ].push(opponent)
         }
+      }
+    }
+    return results;
+  }
+
+    return main();
+};
+
+/**
+ * Append table to stats sheet. Number of games teams win at home.
+ */
+// TODO: add a row for games played at home to normalize
+// TODO: teams that are good/bad away?
+function homeFieldAdvantage() {
+  var participants = DataExtractor.PARTICIPANTS;
+  function main() {
+    var sheets = getCompletedWeekSheets();
+    var results = [];
+    for (var i = 0; i < sheets.length; i++) {
+      // Record for each pick, the week, what each selected, what total selected, and if it was a divison
+      results.push(perWeek(sheets[i]));
+    }
+    var data = compileResults(results);
+    printAsTable(data);
+  };
+  function compileResults(results) {
+    var summary = { };
+    for (var team in TEAMS) { summary[team] = 0 };
+    for (var w in results) {
+      var week = results[w];
+      for (var team in week) {
+        summary[team] += 1;
+      }
+    }
+    return summary;
+  };
+  function printAsTable(data) {
+    var teamRow = [ '' ];
+    for (var team in TEAMS) { teamRow.push(team); }
+    var headerRow = ['Home field Advantage', 'On games before:', CURRENT_WEEK, 'Run on:', new Date()];
+
+    var results = []
+    for (var team in TEAMS) {
+      results.push(data[team]);
+    }
+    var rows = [ [''], headerRow,  teamRow, results ];
+
+    var statsSheet = getStatsSheet();
+    for (var r in rows) {
+      var row = rows[r];
+      Logger.log(row.length);
+      Logger.log(row);
+      statsSheet.appendRow(row);
+    }
+  }
+
+  function perWeek(sheet) {
+    var results = [];
+    var extractor = new DataExtractor(sheet.getDataRange());
+    extractor.extract();
+    for (var game = 0; game < extractor.numGames; game++) {
+      var result = extractor.result(game);
+      if (extractor.homeTeam(game) == result) {
+        results.push(result);
       }
     }
     return results;

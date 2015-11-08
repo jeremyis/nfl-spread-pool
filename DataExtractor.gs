@@ -94,6 +94,12 @@ DataExtractor.prototype.gameIsDivisional = function (gameNum) {
 
   return teamsAreInSameDivision(teams[0], teams[1]);
 };
+DataExtractor.prototype.homeTeam = function (gameNum) {
+  var gameRow = this.gameRows[ gameNum ];
+  var homeCol = this.columnIndex[ DataExtractor.HOME ];
+  var values = this.range.getValues();
+  return values[gameRow][homeCol].trim()
+}
 DataExtractor.prototype.teams = function (gameNum) {
   var gameRow = this.gameRows[ gameNum ];
   var homeCol = this.columnIndex[ DataExtractor.HOME ];
