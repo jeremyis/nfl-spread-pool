@@ -1,4 +1,4 @@
-var CURRENT_WEEK = 'week 9';
+var CURRENT_WEEK = 'week 11';
 
 /**
  * Adds a custom menu to the active spreadsheet, containing a single menu item
@@ -226,8 +226,6 @@ function teamBias() {
 /**
  * Append table to stats sheet. Number of games teams win at home.
  */
-// TODO: add a row for games played at home to normalize
-// TODO: teams that are good/bad away?
 function homeFieldAdvantage() {
   var participants = DataExtractor.PARTICIPANTS;
   function main() {
@@ -242,22 +240,31 @@ function homeFieldAdvantage() {
   };
   function compileResults(results) {
     var summary = { };
-    for (var team in TEAMS) { summary[team] = 0 };
+    var totalGames = { };
+    for (var team in TEAMS) {
+      summary[team] = 0;
+      totalGames[team] = 0;
+    };
+
     for (var w in results) {
       var week = results[w];
-      for (var team in week) {
-        summary[team] += 1;
-      }
+      for (var team in week.homeWins) { summary[week.homeWins[team]] += 1; }
+      for (var team in week.homeGames) { totalGames[week.homeGames[team]] += 1; }
+    }
+
+    for (var team in summary) {
+      summary[team] = summary[team] / totalGames[team];
     }
     return summary;
   };
   function printAsTable(data) {
-    var teamRow = [ '' ];
+    var teamRow = [ ];
     for (var team in TEAMS) { teamRow.push(team); }
     var headerRow = ['Home field Advantage', 'On games before:', CURRENT_WEEK, 'Run on:', new Date()];
 
     var results = []
-    for (var team in TEAMS) {
+    for (var t in teamRow) {
+      var team = teamRow[t]
       results.push(data[team]);
     }
     var rows = [ [''], headerRow,  teamRow, results ];
@@ -265,25 +272,28 @@ function homeFieldAdvantage() {
     var statsSheet = getStatsSheet();
     for (var r in rows) {
       var row = rows[r];
-      Logger.log(row.length);
       Logger.log(row);
       statsSheet.appendRow(row);
     }
   }
 
   function perWeek(sheet) {
-    var results = [];
+    var results = { homeWins: [], homeGames: [] };
     var extractor = new DataExtractor(sheet.getDataRange());
     extractor.extract();
     for (var game = 0; game < extractor.numGames; game++) {
       var result = extractor.result(game);
-      if (extractor.homeTeam(game) == result) {
-        results.push(result);
+      var homeTeam = extractor.homeTeam(game);
+      results.homeGames.push(homeTeam);
+      if (homeTeam == result) {
+        results.homeWins.push(result);
       }
     }
+
     return results;
   }
 
     return main();
 };
+
 
